@@ -157,10 +157,30 @@
            */
           var height = byCodes('8302-2');        // Body height observations
 
-          // Blood pressure requires special handling (see getBloodPressureValue function)
-          // LOINC 55284-4 is a "panel" observation containing both systolic and diastolic
-          var systolicbp = getBloodPressureValue(byCodes('55284-4'), '8480-6');
-          var diastolicbp = getBloodPressureValue(byCodes('55284-4'), '8462-4');
+          /**
+           * Blood Pressure Extraction Strategy:
+           * 
+           * Try two approaches:
+           * 1. PREFERRED: Extract from BP Panel (LOINC 55284-4) with components
+           * 2. FALLBACK: Extract from individual systolic/diastolic observations
+           * 
+           * Different FHIR servers use different approaches for storing BP.
+           */
+          var systolicbp, diastolicbp;
+
+          // Approach 1: Try to get BP from panel observations
+          var bpPanelObservations = byCodes('55284-4');
+          if (bpPanelObservations && bpPanelObservations.length > 0) {
+            // Panel observations found - extract components
+            systolicbp = getBloodPressureValue(bpPanelObservations, '8480-6');
+            diastolicbp = getBloodPressureValue(bpPanelObservations, '8462-4');
+          } else {
+            // Approach 2: Fallback to individual observations
+            var systolicObservations = byCodes('8480-6');
+            var diastolicObservations = byCodes('8462-4');
+            systolicbp = getQuantityValueAndUnit(systolicObservations[0]);
+            diastolicbp = getQuantityValueAndUnit(diastolicObservations[0]);
+          }
 
           var hdl = byCodes('2085-9');           // HDL "good" cholesterol
           var ldl = byCodes('2089-1');           // LDL "bad" cholesterol
