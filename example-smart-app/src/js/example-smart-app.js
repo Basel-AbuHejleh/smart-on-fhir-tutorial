@@ -355,10 +355,59 @@
     $('#gender').html(p.gender);         // Gender (male/female/other/unknown)
     $('#birthdate').html(p.birthdate);   // Birth date (YYYY-MM-DD)
     $('#height').html(p.height);         // Height with unit (e.g., "180 cm")
-    $('#systolicbp').html(p.systolicbp); // Systolic BP (e.g., "120 mmHg")
-    $('#diastolicbp').html(p.diastolicbp); // Diastolic BP (e.g., "80 mmHg")
-    $('#ldl').html(p.ldl);               // LDL cholesterol (e.g., "120 mg/dL")
-    $('#hdl').html(p.hdl);               // HDL cholesterol (e.g., "50 mg/dL")
+
+    // Render Blood Pressure Chart
+    const bpCanv = document.getElementById('bpChart');
+    if (bpCanv) {
+      new Chart(bpCanv.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['Systolic', 'Diastolic'],
+          datasets: [{
+            label: 'Blood Pressure (mmHg)',
+            data: [parseFloat(p.systolicbp) || 0, parseFloat(p.diastolicbp) || 0],
+            backgroundColor: ['rgba(139, 92, 246, 0.6)', 'rgba(59, 130, 246, 0.6)'],
+            borderColor: ['rgba(139, 92, 246, 1)', 'rgba(59, 130, 246, 1)'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'mmHg' }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // Render Cholesterol Chart
+    const cholCanv = document.getElementById('cholesterolChart');
+    if (cholCanv) {
+      new Chart(cholCanv.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['LDL', 'HDL'],
+          datasets: [{
+            data: [parseFloat(p.ldl) || 0, parseFloat(p.hdl) || 0],
+            backgroundColor: ['rgba(236, 72, 153, 0.6)', 'rgba(16, 185, 129, 0.6)'],
+            borderColor: ['rgba(236, 72, 153, 1)', 'rgba(16, 185, 129, 1)'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Cholesterol Breakdown' }
+          }
+        }
+      });
+    }
   };
 
 })(window);
