@@ -355,6 +355,10 @@
     $('#gender').html(p.gender);         // Gender (male/female/other/unknown)
     $('#birthdate').html(p.birthdate);   // Birth date (YYYY-MM-DD)
     $('#height').html(p.height);         // Height with unit (e.g., "180 cm")
+    $('#systolicbp').html(p.systolicbp); // Systolic BP
+    $('#diastolicbp').html(p.diastolicbp); // Diastolic BP
+    $('#ldl').html(p.ldl);               // LDL
+    $('#hdl').html(p.hdl);               // HDL
 
     // Render Blood Pressure Chart
     const bpCanv = document.getElementById('bpChart');
