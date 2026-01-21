@@ -145,6 +145,19 @@
           return $.Deferred().resolve([]).promise();
         });
 
+        // Query Encounter resources (patient visits/admissions)
+        var encounters = smart.patient.api.fetchAll({
+          type: 'Encounter',
+          query: {
+            patient: smart.patient.id
+            // Note: Can also use _id for specific encounter, but we want all patient encounters
+          }
+        }).then(function (data) {
+          return data;
+        }, function () {
+          return $.Deferred().resolve([]).promise();
+        });
+
         // Register error handler ONLY for required resources (Patient and Observations)
         $.when(pt, obv).fail(onError);
 
@@ -156,7 +169,7 @@
          * @param {Object} patient - FHIR Patient resource (R4 format)
          * @param {Array} obv - Array of FHIR Observation resources matching our query
          */
-        $.when(pt, obv, allergies, medications, conditions, immunizations).done(function (patient, obv, allergies, medications, conditions, immunizations) {
+        $.when(pt, obv, allergies, medications, conditions, immunizations, encounters).done(function (patient, obv, allergies, medications, conditions, immunizations, encounters) {
           // Helper function from SMART client to group observations by LOINC code
           var byCodes = smart.byCodes(obv, 'code');
 
@@ -271,6 +284,7 @@
           p.medications = formatMedications(medications);
           p.conditions = formatConditions(conditions);
           p.immunizations = formatImmunizations(immunizations);
+          p.encounters = formatEncounters(encounters);
 
           // Resolve the promise with the populated patient data object
           ret.resolve(p);
@@ -378,6 +392,39 @@
         vaccine: vaccine,
         date: imm.occurrenceDateTime || imm.occurrenceString || 'Unknown date',
         status: imm.status || 'unknown'
+      };
+    });
+  }
+
+  /**
+   * Format Encounter resources for display
+   */
+  function formatEncounters(encounters) {
+    if (!encounters || encounters.length === 0) return [];
+    return encounters.map(function (enc) {
+      var type = 'Visit';
+      if (enc.type && enc.type[0] && enc.type[0].text) {
+        type = enc.type[0].text;
+      } else if (enc.type && enc.type[0] && enc.type[0].coding && enc.type[0].coding[0]) {
+        type = enc.type[0].coding[0].display || 'Visit';
+      }
+
+      var status = enc.status || 'unknown';
+      var period = '';
+      if (enc.period) {
+        if (enc.period.start) {
+          period = enc.period.start;
+          if (enc.period.end) {
+            period += ' to ' + enc.period.end;
+          }
+        }
+      }
+
+      return {
+        type: type,
+        status: status,
+        period: period || 'Date unknown',
+        id: enc.id || ''
       };
     });
   }
@@ -620,6 +667,21 @@
       }).join(''));
     } else {
       $('#immunizations-container').html('<div style="text-align: center; opacity: 0.5; padding: 2rem;">No immunization records</div>');
+    }
+
+    // Render Encounters
+    if (p.encounters && p.encounters.length > 0) {
+      $('#encounters-container').html(p.encounters.map(function (enc) {
+        return '<div class="list-item">' +
+          '<div style="flex: 1;">' +
+          '<div class="item-name">' + enc.type + '</div>' +
+          '<div class="item-detail">' + enc.period + '</div>' +
+          '</div>' +
+          '<span class="badge ' + enc.status + '">' + enc.status + '</span>' +
+          '</div>';
+      }).join(''));
+    } else {
+      $('#encounters-container').html('<div style="text-align: center; opacity: 0.5; padding: 2rem;">No encounter records</div>');
     }
   };
 
