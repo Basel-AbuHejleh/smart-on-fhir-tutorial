@@ -91,8 +91,28 @@
           }
         });
 
-        // Register error handler for any failures in patient or observation API calls
-        $.when(pt, obv).fail(onError);
+        // Query AllergyIntolerance resources
+        var allergies = smart.patient.api.fetchAll({
+          type: 'AllergyIntolerance'
+        });
+
+        // Query MedicationRequest resources
+        var medications = smart.patient.api.fetchAll({
+          type: 'MedicationRequest'
+        });
+
+        // Query Condition resources
+        var conditions = smart.patient.api.fetchAll({
+          type: 'Condition'
+        });
+
+        // Query Immunization resources
+        var immunizations = smart.patient.api.fetchAll({
+          type: 'Immunization'
+        });
+
+        // Register error handler for any failures in API calls
+        $.when(pt, obv, allergies, medications, conditions, immunizations).fail(onError);
 
         /**
          * Process patient and observation data when BOTH API calls complete successfully
@@ -102,7 +122,7 @@
          * @param {Object} patient - FHIR Patient resource (R4 format)
          * @param {Array} obv - Array of FHIR Observation resources matching our query
          */
-        $.when(pt, obv).done(function (patient, obv) {
+        $.when(pt, obv, allergies, medications, conditions, immunizations).done(function (patient, obv, allergies, medications, conditions, immunizations) {
           // Helper function from SMART client to group observations by LOINC code
           var byCodes = smart.byCodes(obv, 'code');
 
@@ -210,6 +230,12 @@
           p.hdl = getQuantityValueAndUnit(hdl[0]);  // e.g., "50 mg/dL"
           p.ldl = getQuantityValueAndUnit(ldl[0]);  // e.g., "120 mg/dL"
 
+          // Process clinical resources
+          p.allergies = formatAllergies(allergies);
+          p.medications = formatMedications(medications);
+          p.conditions = formatConditions(conditions);
+          p.immunizations = formatImmunizations(immunizations);
+
           // Resolve the promise with the populated patient data object
           ret.resolve(p);
         });
@@ -231,6 +257,94 @@
     return ret.promise();
 
   };
+
+  /**
+   * Format AllergyIntolerance resources for display
+   */
+  function formatAllergies(allergies) {
+    if (!allergies || allergies.length === 0) return [];
+    return allergies.map(function (allergy) {
+      var substance = 'Unknown allergen';
+      if (allergy.code && allergy.code.text) {
+        substance = allergy.code.text;
+      } else if (allergy.code && allergy.code.coding && allergy.code.coding[0]) {
+        substance = allergy.code.coding[0].display || 'Unknown allergen';
+      }
+      return {
+        substance: substance,
+        criticality: allergy.criticality || 'unknown',
+        type: allergy.type || 'allergy'
+      };
+    });
+  }
+
+  /**
+   * Format MedicationRequest resources for display
+   */
+  function formatMedications(medications) {
+    if (!medications || medications.length === 0) return [];
+    return medications.map(function (med) {
+      var name = 'Unknown medication';
+      if (med.medicationCodeableConcept && med.medicationCodeableConcept.text) {
+        name = med.medicationCodeableConcept.text;
+      } else if (med.medicationCodeableConcept && med.medicationCodeableConcept.coding && med.medicationCodeableConcept.coding[0]) {
+        name = med.medicationCodeableConcept.coding[0].display || 'Unknown medication';
+      }
+      var dosage = 'See instructions';
+      if (med.dosageInstruction && med.dosageInstruction[0] && med.dosageInstruction[0].text) {
+        dosage = med.dosageInstruction[0].text;
+      }
+      return {
+        name: name,
+        dosage: dosage,
+        status: med.status || 'unknown'
+      };
+    });
+  }
+
+  /**
+   * Format Condition resources for display
+   */
+  function formatConditions(conditions) {
+    if (!conditions || conditions.length === 0) return [];
+    return conditions.map(function (cond) {
+      var name = 'Unknown condition';
+      if (cond.code && cond.code.text) {
+        name = cond.code.text;
+      } else if (cond.code && cond.code.coding && cond.code.coding[0]) {
+        name = cond.code.coding[0].display || 'Unknown condition';
+      }
+      var status = 'unknown';
+      if (cond.clinicalStatus && cond.clinicalStatus.coding && cond.clinicalStatus.coding[0]) {
+        status = cond.clinicalStatus.coding[0].code;
+      }
+      return {
+        name: name,
+        status: status,
+        onsetDate: cond.onsetDateTime || cond.onsetString || ''
+      };
+    });
+  }
+
+  /**
+   * Format Immunization resources for display
+   */
+  function formatImmunizations(immunizations) {
+    if (!immunizations || immunizations.length === 0) return [];
+    return immunizations.map(function (imm) {
+      var vaccine = 'Unknown vaccine';
+      if (imm.vaccineCode && imm.vaccineCode.text) {
+        vaccine = imm.vaccineCode.text;
+      } else if (imm.vaccineCode && imm.vaccineCode.coding && imm.vaccineCode.coding[0]) {
+        vaccine = imm.vaccineCode.coding[0].display || 'Unknown vaccine';
+      }
+      return {
+        vaccine: vaccine,
+        date: imm.occurrenceDateTime || imm.occurrenceString || 'Unknown date',
+        status: imm.status || 'unknown'
+      };
+    });
+  }
 
   /**
    * Creates a default patient object with empty values

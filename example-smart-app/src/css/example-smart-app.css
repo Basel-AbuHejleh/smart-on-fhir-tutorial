@@ -417,6 +417,88 @@ body::before {
 }
 
 /* =========================================
+   List Containers & Items
+   ========================================= */
+
+.list-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.list-container:empty::after {
+  content: 'No data available';
+  opacity: 0.5;
+  text-align: center;
+  padding: var(--space-lg);
+  display: block;
+}
+
+.list-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background var(--transition-fast);
+}
+
+.list-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.item-name {
+  font-weight: 500;
+  flex: 1;
+}
+
+.item-detail {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-left: var(--space-sm);
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge.high,
+.badge.severe {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.badge.medium,
+.badge.moderate {
+  background: rgba(251, 191, 36, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.5);
+}
+
+.badge.low,
+.badge.mild {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.badge.active {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+}
+
+.badge.completed {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+/* =========================================
    Utility Classes
    ========================================= */
 
