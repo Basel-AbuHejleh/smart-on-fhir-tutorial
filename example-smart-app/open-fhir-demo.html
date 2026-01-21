@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART on FHIR - Open FHIR Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #e8e8e8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #00d4ff;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #00d4ff, #7c3aed);
+            border-radius: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            color: #888;
+            font-weight: 500;
+            width: 40%;
+        }
+
+        td {
+            color: #fff;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 212, 255, 0.2);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            color: #ff4757;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: rgba(46, 213, 115, 0.2);
+            color: #2ed573;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .fhir-url {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #00d4ff;
+            margin-bottom: 1rem;
+            word-break: break-all;
+        }
+
+        .obs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .obs-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .obs-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .obs-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+
+        .obs-date {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🏥 SMART on FHIR Demo</h1>
+        <p class="subtitle">Cerner Open FHIR R4 Endpoint</p>
+
+        <div class="fhir-url">
+            📡 https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Fetching patient data...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="card">
+                <span class="success-badge">✓ Connected to FHIR Server</span>
+                <h2>Patient Information</h2>
+                <table>
+                    <tr>
+                        <th>Patient ID</th>
+                        <td id="patientId">-</td>
+                    </tr>
+                    <tr>
+                        <th>Full Name</th>
+                        <td id="fullName">-</td>
+                    </tr>
+                    <tr>
+                        <th>Gender</th>
+                        <td id="gender">-</td>
+                    </tr>
+                    <tr>
+                        <th>Date of Birth</th>
+                        <td id="birthDate">-</td>
+                    </tr>
+                    <tr>
+                        <th>Address</th>
+                        <td id="address">-</td>
+                    </tr>
+                    <tr>
+                        <th>Marital Status</th>
+                        <td id="maritalStatus">-</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Clinical Observations</h2>
+                <div id="observations" class="obs-grid">
+                    <p style="color: #888;">Loading observations...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Conditions</h2>
+                <div id="conditions">
+                    <p style="color: #888;">Loading conditions...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="error" style="display: none;" class="error"></div>
+    </div>
+
+    <script>
+        const FHIR_BASE = 'https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d';
+        const PATIENT_ID = '12742399';
+
+        async function fetchFHIR(resourcePath) {
+            const response = await fetch(`${FHIR_BASE}/${resourcePath}`, {
+                headers: {
+                    'Accept': 'application/fhir+json'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`FHIR request failed: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        }
+
+        function formatName(name) {
+            if (!name || !name.length) return '-';
+            const n = name[0];
+            const given = n.given ? n.given.join(' ') : '';
+            const family = n.family || '';
+            return `${given} ${family}`.trim() || '-';
+        }
+
+        function formatAddress(address) {
+            if (!address || !address.length) return '-';
+            const a = address[0];
+            const parts = [];
+            if (a.line) parts.push(a.line.join(', '));
+            if (a.city) parts.push(a.city);
+            if (a.state) parts.push(a.state);
+            if (a.postalCode) parts.push(a.postalCode);
+            return parts.join(', ') || '-';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        async function loadPatient() {
+            try {
+                const patient = await fetchFHIR(`Patient/${PATIENT_ID}`);
+
+                document.getElementById('patientId').textContent = patient.id;
+                document.getElementById('fullName').textContent = formatName(patient.name);
+                document.getElementById('gender').textContent = patient.gender ?
+                    patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : '-';
+                document.getElementById('birthDate').textContent = formatDate(patient.birthDate);
+                document.getElementById('address').textContent = formatAddress(patient.address);
+                document.getElementById('maritalStatus').textContent =
+                    patient.maritalStatus?.text || patient.maritalStatus?.coding?.[0]?.display || '-';
+
+                return patient;
+            } catch (error) {
+                throw new Error(`Failed to load patient: ${error.message}`);
+            }
+        }
+
+        async function loadObservations() {
+            try {
+                const bundle = await fetchFHIR(`Observation?patient=${PATIENT_ID}&_count=20`);
+                const container = document.getElementById('observations');
+
+                if (!bundle.entry || bundle.entry.length === 0) {
+                    container.innerHTML = '<p style="color: #888;">No observations found</p>';
+                    return;
+                }
+
+                const obsMap = new Map();
+                bundle.entry.forEach(entry => {
+                    const obs = entry.resource;
+                    const code = obs.code?.coding?.[0]?.code || 'unknown';
+                    const display = obs.code?.coding?.[0]?.display || obs.code?.text || 'Unknown';
+
+                    // Keep only the most recent observation per type
+                    if (!obsMap.has(code) || new Date(obs.effectiveDateTime) > new Date(obsMap.get(code).effectiveDateTime)) {
+                        obsMap.set(code, obs);
+                    }
+                });
+
+                let html = '';
+                obsMap.forEach((obs, code) => {
+                    let value = '-';
+                    if (obs.valueQuantity) {
+                        value = `${obs.valueQuantity.value} ${obs.valueQuantity.unit || ''}`;
+                    } else if (obs.valueString) {
+                        value = obs.valueString;
+                    } else if (obs.valueCodeableConcept) {
+                        value = obs.valueCodeableConcept.text || obs.valueCodeableConcept.coding?.[0]?.display || '-';
+                    } else if (obs.component) {
+                        // Handle blood pressure and other component observations
+                        value = obs.component.map(c => {
+                            const cDisplay = c.code?.coding?.[0]?.display || c.code?.text || '';
+                            const cValue = c.valueQuantity ? `${c.valueQuantity.value} ${c.valueQuantity.unit || ''}` : '-';
+                            return `${cDisplay}: ${cValue}`;
+                        }).join('<br>');
+                    }
+
+                    const display = obs.code?.coding?.[0]?.display || obs.code?.text || 'Unknown';
+                    const date = obs.effectiveDateTime ? formatDate(obs.effectiveDateTime) : '-';
+
+                    html += `
+            <div class="obs-item">
+              <div class="obs-value">${value}</div>
+              <div class="obs-label">${display}</div>
+              <div class="obs-date">${date}</div>
+            </div>
+          `;
+                });
+
+                container.innerHTML = html || '<p style="color: #888;">No observations found</p>';
+            } catch (error) {
+                document.getElementById('observations').innerHTML =
+                    `<p style="color: #ff4757;">Error loading observations: ${error.message}</p>`;
+            }
+        }
+
+        async function loadConditions() {
+            try {
+                const bundle = await fetchFHIR(`Condition?patient=${PATIENT_ID}&_count=10`);
+                const container = document.getElementById('conditions');
+
+                if (!bundle.entry || bundle.entry.length === 0) {
+                    container.innerHTML = '<p style="color: #888;">No conditions found</p>';
+                    return;
+                }
+
+                let html = '<table>';
+                bundle.entry.forEach(entry => {
+                    const condition = entry.resource;
+                    const display = condition.code?.coding?.[0]?.display || condition.code?.text || 'Unknown';
+                    const status = condition.clinicalStatus?.coding?.[0]?.code || '-';
+                    const onset = condition.onsetDateTime ? formatDate(condition.onsetDateTime) : '-';
+
+                    html += `
+            <tr>
+              <th>${display}</th>
+              <td>Status: ${status} | Onset: ${onset}</td>
+            </tr>
+          `;
+                });
+                html += '</table>';
+
+                container.innerHTML = html;
+            } catch (error) {
+                document.getElementById('conditions').innerHTML =
+                    `<p style="color: #ff4757;">Error loading conditions: ${error.message}</p>`;
+            }
+        }
+
+        async function init() {
+            try {
+                await loadPatient();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                // Load observations and conditions in parallel
+                await Promise.all([loadObservations(), loadConditions()]);
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerHTML = `
+          <strong>Error:</strong> ${error.message}<br><br>
+          <small>Check browser console for details. This may be a CORS issue if running locally.</small>
+        `;
+                console.error('Error:', error);
+            }
+        }
+
+        // Start loading
+        init();
+    </script>
+</body>
+
+</html>

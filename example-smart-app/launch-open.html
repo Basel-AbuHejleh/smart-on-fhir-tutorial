@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel='stylesheet' type='text/css' href='./src/css/example-smart-app.css'>
+    <title>Example-SMART-App (Open FHIR)</title>
+  </head>
+  <body>
+    <!-- FHIR Client JS Library -->
+    <script src='./lib/js/fhir-client-v0.1.12.js'></script>
+    <script src='./lib/js/fhir-client-cerner-additions-1.0.0.js'></script>
+    <script>
+      // Launch against Cerner's Open FHIR R4 endpoint (no auth required)
+      FHIR.oauth2.authorize({
+        // No client_id needed for open endpoints
+        'client_id': 'open-fhir-app',
+        'scope': 'patient/Patient.read patient/Observation.read openid profile',
+        // The open FHIR server URL
+        'iss': 'https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d',
+        // Specify the patient ID
+        'patientId': '12742399',
+        // Skip authorization for open endpoints
+        'fakeTokenResponse': {
+          'patient': '12742399'
+        }
+      });
+    </script>
+    <div class="spinner">
+      <div class="bounce1"></div>
+      <div class="bounce2"></div>
+      <div class="bounce3"></div>
+    </div>
+  </body>
+</html>

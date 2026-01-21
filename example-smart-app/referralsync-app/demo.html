@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReferralSync - Demo Mode</title>
+    <link rel="stylesheet" href="src/css/referral-app.css">
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">🔗</div>
+            <h1>ReferralSync</h1>
+            <div class="loading-spinner"></div>
+            <p>Connecting to FHIR server...</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="app" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-container">
+                <div class="header-left">
+                    <div class="logo">
+                        <span class="logo-icon">🔗</span>
+                        <span class="logo-text">ReferralSync</span>
+                        <span
+                            style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; font-size: 11px; margin-left: 12px;">DEMO</span>
+                    </div>
+                </div>
+                <div class="header-center">
+                    <div class="patient-banner" id="patient-banner">
+                        <div class="patient-avatar" id="patient-avatar">👤</div>
+                        <div class="patient-info">
+                            <h2 id="patient-name">Loading...</h2>
+                            <div class="patient-meta">
+                                <span id="patient-dob">DOB: -</span>
+                                <span class="meta-divider">|</span>
+                                <span id="patient-gender">-</span>
+                                <span class="meta-divider">|</span>
+                                <span id="patient-mrn">MRN: -</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-ghost" id="refresh-btn">
+                        <span>🔄</span> Refresh
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Stats Bar -->
+            <section class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-icon pending">📋</div>
+                    <div class="stat-details">
+                        <span class="stat-value" id="stat-pending">0</span>
+                        <span class="stat-label">Pending</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon accepted">✓</div>
+                    <div class="stat-details">
+                        <span class="stat-value" id="stat-accepted">0</span>
+                        <span class="stat-label">Accepted</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon scheduled">📅</div>
+                    <div class="stat-details">
+                        <span class="stat-value" id="stat-scheduled">0</span>
+                        <span class="stat-label">Scheduled</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon completed">✓✓</div>
+                    <div class="stat-details">
+                        <span class="stat-value" id="stat-completed">0</span>
+                        <span class="stat-label">Completed</span>
+                    </div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="stat-icon rate">📊</div>
+                    <div class="stat-details">
+                        <span class="stat-value" id="stat-rate">0%</span>
+                        <span class="stat-label">Completion Rate</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Left Panel: Referral List -->
+                <section class="panel referral-list-panel">
+                    <div class="panel-header">
+                        <h3>📋 Referrals</h3>
+                        <button class="btn btn-primary" id="new-referral-btn">
+                            <span>+</span> New Referral
+                        </button>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filters">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="search-input" placeholder="Search by specialty, provider...">
+                        </div>
+                        <select id="status-filter" class="filter-select">
+                            <option value="">All Status</option>
+                            <option value="requested">Pending</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="in-progress">Scheduled</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        <select id="priority-filter" class="filter-select">
+                            <option value="">All Priority</option>
+                            <option value="stat">STAT</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="routine">Routine</option>
+                        </select>
+                    </div>
+
+                    <!-- Referral Cards -->
+                    <div class="referral-list" id="referral-list">
+                        <div class="loading-placeholder">
+                            <div class="loading-spinner small"></div>
+                            <p>Loading referrals...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right Panel: Detail View / Create Form -->
+                <section class="panel detail-panel" id="detail-panel">
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <h3>Select a Referral</h3>
+                        <p>Click on a referral card to view details, or create a new referral.</p>
+                        <p style="margin-top: 20px; font-size: 13px; color: var(--gray-400);">
+                            Demo mode - Using Cerner Open FHIR Sandbox
+                        </p>
+                    </div>
+
+                    <!-- Referral Detail View -->
+                    <div class="detail-view" id="detail-view" style="display: none;">
+                        <div class="detail-header">
+                            <div class="detail-title">
+                                <h2 id="detail-specialty">-</h2>
+                                <span class="status-badge" id="detail-status">-</span>
+                            </div>
+                            <button class="btn btn-ghost" id="close-detail" style="color: var(--gray-500);">✕</button>
+                        </div>
+
+                        <div class="detail-body">
+                            <div class="detail-section">
+                                <h4>Referral Information</h4>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Priority</span>
+                                        <span class="detail-value" id="detail-priority">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Created</span>
+                                        <span class="detail-value" id="detail-created">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">ServiceRequest ID</span>
+                                        <span class="detail-value" id="detail-id">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Intent</span>
+                                        <span class="detail-value" id="detail-intent">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-section">
+                                <h4>Reason for Referral</h4>
+                                <p class="detail-text" id="detail-reason">-</p>
+                            </div>
+
+                            <div class="detail-section">
+                                <h4>Clinical Code</h4>
+                                <p class="detail-text" id="detail-code">-</p>
+                            </div>
+
+                            <div class="detail-section">
+                                <h4>Status Timeline</h4>
+                                <div class="timeline" id="status-timeline"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Create Referral Form -->
+                    <div class="create-form" id="create-form" style="display: none;">
+                        <div class="detail-header">
+                            <h2>Create New Referral</h2>
+                            <button class="btn btn-ghost" id="close-form" style="color: var(--gray-500);">✕</button>
+                        </div>
+
+                        <form id="referral-form">
+                            <div class="form-group">
+                                <label for="specialty">Specialty / Service Type *</label>
+                                <select id="specialty" required class="form-control">
+                                    <option value="">Select specialty...</option>
+                                    <option value="Cardiology">Cardiology</option>
+                                    <option value="Endocrinology">Endocrinology</option>
+                                    <option value="Nephrology">Nephrology</option>
+                                    <option value="Neurology">Neurology</option>
+                                    <option value="Orthopedics">Orthopedics</option>
+                                    <option value="Psychiatry">Psychiatry</option>
+                                    <option value="General Surgery">General Surgery</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="priority">Priority *</label>
+                                <select id="priority" required class="form-control">
+                                    <option value="routine">Routine</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="stat">STAT</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reason">Reason for Referral *</label>
+                                <textarea id="reason" required class="form-control" rows="3"
+                                    placeholder="Chief complaint or diagnosis requiring specialist evaluation"></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    📤 Send Referral (Demo)
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancel-form">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="form-message" id="form-message"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // ================================================================
+        // REFERRALSYNC DEMO - Direct FHIR API (No OAuth)
+        // Uses Cerner Open FHIR Sandbox
+        // ================================================================
+
+        const FHIR_BASE = 'https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d';
+        const PATIENT_ID = '12742399';
+
+        let currentPatient = null;
+        let allReferrals = [];
+        let selectedReferral = null;
+
+        // Demo referrals (since open endpoint may not have ServiceRequests)
+        let demoReferrals = [
+            {
+                id: 'demo-1',
+                specialty: 'Cardiology',
+                priority: 'urgent',
+                status: 'requested',
+                reason: 'Chest pain evaluation - patient reports intermittent episodes',
+                created: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 'demo-2',
+                specialty: 'Endocrinology',
+                priority: 'routine',
+                status: 'accepted',
+                reason: 'Diabetes management - A1C consistently above 8.5%',
+                created: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 'demo-3',
+                specialty: 'Orthopedics',
+                priority: 'routine',
+                status: 'in-progress',
+                reason: 'Knee pain - possible meniscus tear, MRI recommended',
+                created: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 'demo-4',
+                specialty: 'Neurology',
+                priority: 'stat',
+                status: 'completed',
+                reason: 'Severe headaches with visual disturbances',
+                created: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+            }
+        ];
+
+        // ================================================================
+        // INITIALIZATION
+        // ================================================================
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                console.log('🚀 ReferralSync Demo Starting...');
+
+                // Load patient from open FHIR
+                const res = await fetch(`${FHIR_BASE}/Patient/${PATIENT_ID}`, {
+                    headers: { 'Accept': 'application/fhir+json' }
+                });
+                currentPatient = await res.json();
+
+                displayPatientBanner(currentPatient);
+
+                // Hide loading, show app
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+
+                // Load referrals
+                loadReferrals();
+
+                // Setup events
+                setupEventListeners();
+
+                showToast('Connected to Cerner FHIR Sandbox', 'success');
+
+            } catch (error) {
+                console.error('Init failed:', error);
+                showInitError(error);
+            }
+        });
+
+        function displayPatientBanner(patient) {
+            const name = patient.name?.[0];
+            const fullName = name ? `${name.given?.join(' ') || ''} ${name.family || ''}`.trim() : 'Unknown';
+            document.getElementById('patient-name').textContent = fullName;
+
+            const dob = patient.birthDate ? new Date(patient.birthDate).toLocaleDateString() : '-';
+            document.getElementById('patient-dob').textContent = `DOB: ${dob}`;
+
+            document.getElementById('patient-gender').textContent =
+                patient.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : '-';
+            document.getElementById('patient-mrn').textContent = `MRN: ${patient.id}`;
+            document.getElementById('patient-avatar').textContent = patient.gender === 'female' ? '👩' : '👨';
+        }
+
+        function setupEventListeners() {
+            document.getElementById('refresh-btn').addEventListener('click', loadReferrals);
+            document.getElementById('new-referral-btn').addEventListener('click', showCreateForm);
+            document.getElementById('close-detail').addEventListener('click', hideDetailView);
+            document.getElementById('close-form').addEventListener('click', hideCreateForm);
+            document.getElementById('cancel-form').addEventListener('click', hideCreateForm);
+            document.getElementById('referral-form').addEventListener('submit', handleCreateReferral);
+            document.getElementById('search-input').addEventListener('input', filterReferrals);
+            document.getElementById('status-filter').addEventListener('change', filterReferrals);
+            document.getElementById('priority-filter').addEventListener('change', filterReferrals);
+        }
+
+        // ================================================================
+        // LOAD & RENDER REFERRALS
+        // ================================================================
+
+        async function loadReferrals() {
+            // Use demo data (open endpoint typically doesn't have ServiceRequests)
+            allReferrals = demoReferrals.map(d => ({
+                serviceRequest: {
+                    id: d.id,
+                    code: { text: d.specialty },
+                    priority: d.priority,
+                    reasonCode: [{ text: d.reason }],
+                    authoredOn: d.created,
+                    status: 'active',
+                    intent: 'order'
+                },
+                status: d.status
+            }));
+
+            renderReferralList(allReferrals);
+            updateStats(allReferrals);
+        }
+
+        function renderReferralList(referrals) {
+            const listEl = document.getElementById('referral-list');
+
+            if (referrals.length === 0) {
+                listEl.innerHTML = '<div class="no-data">No referrals found.</div>';
+                return;
+            }
+
+            listEl.innerHTML = referrals.map((ref, i) => {
+                const sr = ref.serviceRequest;
+                return `
+                    <div class="referral-card status-${ref.status}" data-index="${i}" onclick="selectReferral(${i})">
+                        <div class="referral-card-header">
+                            <h4>${sr.code?.text || 'Referral'}</h4>
+                            <span class="status-badge ${ref.status}">${getStatusLabel(ref.status)}</span>
+                        </div>
+                        <div class="referral-card-meta">
+                            <span class="priority-badge ${sr.priority}">
+                                ${getPriorityIcon(sr.priority)} ${(sr.priority || 'routine').toUpperCase()}
+                            </span>
+                            <span>📅 ${new Date(sr.authoredOn).toLocaleDateString()}</span>
+                        </div>
+                        <p style="font-size: 13px; color: var(--gray-600); margin-top: 8px;">
+                            ${sr.reasonCode?.[0]?.text?.substring(0, 60) || '-'}...
+                        </p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getStatusLabel(s) {
+            return { 'requested': '⏳ Pending', 'accepted': '✓ Accepted', 'in-progress': '📅 Scheduled', 'completed': '✓✓ Completed' }[s] || s;
+        }
+
+        function getPriorityIcon(p) {
+            return { 'stat': '🔴', 'urgent': '🟡', 'routine': '🟢' }[p] || '⚪';
+        }
+
+        // ================================================================
+        // DETAIL VIEW
+        // ================================================================
+
+        window.selectReferral = function (index) {
+            selectedReferral = allReferrals[index];
+            document.querySelectorAll('.referral-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.referral-card[data-index="${index}"]`)?.classList.add('active');
+
+            const sr = selectedReferral.serviceRequest;
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('create-form').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'block';
+
+            document.getElementById('detail-specialty').textContent = sr.code?.text || 'Referral';
+            const badge = document.getElementById('detail-status');
+            badge.textContent = getStatusLabel(selectedReferral.status);
+            badge.className = `status-badge ${selectedReferral.status}`;
+
+            document.getElementById('detail-priority').textContent = (sr.priority || 'routine').toUpperCase();
+            document.getElementById('detail-created').textContent = new Date(sr.authoredOn).toLocaleString();
+            document.getElementById('detail-id').textContent = sr.id;
+            document.getElementById('detail-intent').textContent = sr.intent || 'order';
+            document.getElementById('detail-reason').textContent = sr.reasonCode?.[0]?.text || '-';
+            document.getElementById('detail-code').textContent = sr.code?.text || '-';
+
+            // Timeline
+            document.getElementById('status-timeline').innerHTML = `
+                <div class="timeline-item completed">
+                    <div class="timeline-date">${new Date(sr.authoredOn).toLocaleString()}</div>
+                    <div class="timeline-text">Referral Created</div>
+                </div>
+                ${selectedReferral.status !== 'requested' ? `
+                <div class="timeline-item completed">
+                    <div class="timeline-date">Updated</div>
+                    <div class="timeline-text">Referral ${selectedReferral.status === 'accepted' ? 'Accepted' : selectedReferral.status === 'in-progress' ? 'Scheduled' : 'Completed'}</div>
+                </div>
+                ` : ''}
+            `;
+        };
+
+        function hideDetailView() {
+            document.getElementById('detail-view').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'flex';
+            document.querySelectorAll('.referral-card').forEach(c => c.classList.remove('active'));
+        }
+
+        // ================================================================
+        // CREATE REFERRAL (Demo)
+        // ================================================================
+
+        function showCreateForm() {
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'none';
+            document.getElementById('create-form').style.display = 'block';
+            document.getElementById('referral-form').reset();
+        }
+
+        function hideCreateForm() {
+            document.getElementById('create-form').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'flex';
+        }
+
+        async function handleCreateReferral(e) {
+            e.preventDefault();
+
+            const specialty = document.getElementById('specialty').value;
+            const priority = document.getElementById('priority').value;
+            const reason = document.getElementById('reason').value;
+
+            // Add to demo data
+            demoReferrals.unshift({
+                id: 'demo-' + Date.now(),
+                specialty,
+                priority,
+                status: 'requested',
+                reason,
+                created: new Date().toISOString()
+            });
+
+            showToast('Referral created successfully (Demo)', 'success');
+            loadReferrals();
+            hideCreateForm();
+        }
+
+        // ================================================================
+        // FILTER & STATS
+        // ================================================================
+
+        function filterReferrals() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const status = document.getElementById('status-filter').value;
+            const priority = document.getElementById('priority-filter').value;
+
+            const filtered = allReferrals.filter(r => {
+                const sr = r.serviceRequest;
+                const matchSearch = !search || (sr.code?.text || '').toLowerCase().includes(search);
+                const matchStatus = !status || r.status === status;
+                const matchPriority = !priority || sr.priority === priority;
+                return matchSearch && matchStatus && matchPriority;
+            });
+
+            renderReferralList(filtered);
+        }
+
+        function updateStats(referrals) {
+            const pending = referrals.filter(r => r.status === 'requested').length;
+            const accepted = referrals.filter(r => r.status === 'accepted').length;
+            const scheduled = referrals.filter(r => r.status === 'in-progress').length;
+            const completed = referrals.filter(r => r.status === 'completed').length;
+            const total = referrals.length;
+
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-accepted').textContent = accepted;
+            document.getElementById('stat-scheduled').textContent = scheduled;
+            document.getElementById('stat-completed').textContent = completed;
+            document.getElementById('stat-rate').textContent = total ? Math.round((completed / total) * 100) + '%' : '0%';
+        }
+
+        // ================================================================
+        // TOAST & ERRORS
+        // ================================================================
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${type === 'success' ? '✓' : 'ℹ'}</span> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function showInitError(error) {
+            document.getElementById('loading-screen').innerHTML = `
+                <div class="loading-content">
+                    <div class="loading-logo">⚠️</div>
+                    <h1>Connection Error</h1>
+                    <p style="opacity: 0.7;">${error.message}</p>
+                    <button onclick="location.reload()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Retry</button>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>

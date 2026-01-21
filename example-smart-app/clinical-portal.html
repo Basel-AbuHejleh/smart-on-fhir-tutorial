@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Patient Portal - FHIR R4</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #0891b2;
+            --primary-light: #22d3ee;
+            --secondary: #f97316;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 0;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Patient Banner */
+        .patient-banner {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            gap: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .patient-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .patient-details h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .patient-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .patient-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .patient-meta strong {
+            color: white;
+            font-weight: 500;
+        }
+
+        .version-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-left: auto;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            background: #334155;
+            padding: 0.5rem 1.5rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover,
+        .toolbar-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 0.5rem;
+        }
+
+        /* Main Content */
+        .main {
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Growth Metrics Section */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .metric-card.height::before {
+            background: var(--primary);
+        }
+
+        .metric-card.weight::before {
+            background: var(--secondary);
+        }
+
+        .metric-card.bmi::before {
+            background: var(--success);
+        }
+
+        .metric-card.bp::before {
+            background: var(--danger);
+        }
+
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-card.height .metric-icon {
+            background: rgba(8, 145, 178, 0.1);
+        }
+
+        .metric-card.weight .metric-icon {
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .metric-card.bmi .metric-icon {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .metric-card.bp .metric-icon {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-date {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .metric-value-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .metric-unit {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .metric-percentile {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(8, 145, 178, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .percentile-bar {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin-top: 0.75rem;
+            overflow: hidden;
+        }
+
+        .percentile-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+
+        /* Chart Sections */
+        .section {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: #f8fafc;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        /* BMI Visual */
+        .bmi-visual {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-end;
+            padding: 1rem 0;
+        }
+
+        .bmi-figure {
+            text-align: center;
+            flex: 1;
+            opacity: 0.4;
+            transition: all 0.3s;
+        }
+
+        .bmi-figure.active {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        .bmi-silhouette {
+            height: 80px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .bmi-silhouette svg {
+            height: 100%;
+            width: auto;
+        }
+
+        .bmi-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .bmi-figure.active .bmi-label {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .status-completed {
+            background: rgba(8, 145, 178, 0.1);
+            color: #0891b2;
+        }
+
+        .status-high {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        /* Allergies */
+        .allergy-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .allergy-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .allergy-severity {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .severity-high {
+            background: #ef4444;
+        }
+
+        .severity-low {
+            background: #f59e0b;
+        }
+
+        /* Growth Chart */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .patient-meta {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">
+                <span>🏥</span>
+                <span>Clinical Patient Portal</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-ghost">📊 GRAPHS</button>
+                <button class="btn btn-ghost">📋 TABLE</button>
+                <button class="btn btn-ghost">👥 PARENT</button>
+                <span class="version-badge">FHIR R4 • v1.0</span>
+            </div>
+        </div>
+        <div class="patient-banner">
+            <div class="patient-avatar" id="avatar">👤</div>
+            <div class="patient-details">
+                <h1 id="patientName">Loading...</h1>
+                <div class="patient-meta">
+                    <span>sex <strong id="patientGender">-</strong></span>
+                    <span>dob <strong id="patientDob">-</strong></span>
+                    <span>age <strong id="patientAge">-</strong></span>
+                    <span>MRN <strong id="patientId">-</strong></span>
+                </div>
+            </div>
+        </div>
+        <div class="toolbar">
+            <button class="toolbar-btn">0 - 13 Weeks</button>
+            <button class="toolbar-btn">0 - 6 Months</button>
+            <button class="toolbar-btn">0 - 2 Years</button>
+            <button class="toolbar-btn active">0 - 20 Years</button>
+            <button class="toolbar-btn">Fit to Age</button>
+            <div class="toolbar-divider"></div>
+            <button class="toolbar-btn">🔍 Zoom Out</button>
+            <button class="toolbar-btn">➕ Add Data</button>
+        </div>
+    </header>
+
+    <main class="main">
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading clinical data...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <!-- Growth Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card height">
+                    <div class="metric-icon">📏</div>
+                    <div class="metric-label">Height</div>
+                    <div class="metric-date" id="heightDate">-</div>
+                    <div class="metric-value-row">
+                        <span class="metric-value" id="heightValue">-</span>
+                        <span class="metric-unit" id="heightUnit">cm</span>
+                    </div>
+                    <div class="metric-percentile" id="heightPercentile">-</div>
+                    <div class="percentile-bar">
+                        <div class="percentile-fill" id="heightBar" style="width: 0%; background: var(--primary);">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card weight">
+                    <div class="metric-icon">⚖️</div>
+                    <div class="metric-label">Weight</div>
+                    <div class="metric-date" id="weightDate">-</div>
+                    <div class="metric-value-row">
+                        <span class="metric-value" id="weightValue">-</span>
+                        <span class="metric-unit" id="weightUnit">kg</span>
+                    </div>
+                    <div class="metric-percentile" id="weightPercentile">-</div>
+                    <div class="percentile-bar">
+                        <div class="percentile-fill" id="weightBar" style="width: 0%; background: var(--secondary);">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card bmi">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-label">BMI</div>
+                    <div class="metric-date" id="bmiDate">-</div>
+                    <div class="metric-value-row">
+                        <span class="metric-value" id="bmiValue">-</span>
+                        <span class="metric-unit">kg/m²</span>
+                    </div>
+                    <div class="metric-percentile" id="bmiPercentile">-</div>
+                    <div class="percentile-bar">
+                        <div class="percentile-fill" id="bmiBar" style="width: 0%; background: var(--success);"></div>
+                    </div>
+                </div>
+
+                <div class="metric-card bp">
+                    <div class="metric-icon">❤️</div>
+                    <div class="metric-label">Blood Pressure</div>
+                    <div class="metric-date" id="bpDate">-</div>
+                    <div class="metric-value-row">
+                        <span class="metric-value" id="bpValue">-</span>
+                        <span class="metric-unit">mmHg</span>
+                    </div>
+                    <div class="metric-percentile" id="bpStatus">-</div>
+                    <div class="percentile-bar">
+                        <div class="percentile-fill" id="bpBar" style="width: 0%; background: var(--danger);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📈 Growth Chart - Height Progression</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="heightChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">⚖️ Weight Progression</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="weightChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BMI Assessment & Allergies -->
+            <div class="grid-2" style="margin-top: 1rem;">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🏃 BMI Assessment</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="bmi-visual" style="position: relative;">
+                            <img src="bmi-silhouettes.png" alt="BMI Categories"
+                                style="width: 100%; max-width: 500px; margin: 0 auto; display: block;">
+                            <div class="bmi-indicator" id="bmiIndicator"
+                                style="display: none; position: absolute; bottom: 0; left: 0; background: rgba(0,0,0,0.7); color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600;">
+                            </div>
+                        </div>
+                        <div class="bmi-categories"
+                            style="display: flex; justify-content: space-around; margin-top: 1rem; text-align: center;">
+                            <div class="bmi-cat" id="bmi-underweight"
+                                style="padding: 0.5rem 1rem; border-radius: 8px; opacity: 0.5; transition: all 0.3s;">
+                                <div style="font-weight: 600; color: #94a3b8;">Underweight</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">&lt; 18.5</div>
+                            </div>
+                            <div class="bmi-cat" id="bmi-healthy"
+                                style="padding: 0.5rem 1rem; border-radius: 8px; opacity: 0.5; transition: all 0.3s;">
+                                <div style="font-weight: 600; color: #22c55e;">Healthy</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">18.5 - 24.9</div>
+                            </div>
+                            <div class="bmi-cat" id="bmi-overweight"
+                                style="padding: 0.5rem 1rem; border-radius: 8px; opacity: 0.5; transition: all 0.3s;">
+                                <div style="font-weight: 600; color: #f59e0b;">Overweight</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">25 - 29.9</div>
+                            </div>
+                            <div class="bmi-cat" id="bmi-obese"
+                                style="padding: 0.5rem 1rem; border-radius: 8px; opacity: 0.5; transition: all 0.3s;">
+                                <div style="font-weight: 600; color: #ef4444;">Obese</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">&gt; 30</div>
+                            </div>
+                        </div>
+                        <div
+                            style="text-align: center; margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                            <strong id="bmiStatement">Loading BMI assessment...</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">⚠️ Allergies & Intolerances</span>
+                        <span class="status-badge status-high" id="allergyCount">0 Active</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="allergy-badges" id="allergyList">
+                            <p style="color: var(--text-secondary);">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vitals Table -->
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-header">
+                    <span class="card-title">📋 Recent Observations</span>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Observation</th>
+                                <th>Value</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="observationsTable">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 2rem;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Medications & Conditions -->
+            <div class="grid-2" style="margin-top: 1rem;">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">💊 Active Medications</span>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Medication</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="medicationsTable">
+                                <tr>
+                                    <td colspan="2" style="text-align: center; padding: 2rem;">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🩺 Active Conditions</span>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Condition</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="conditionsTable">
+                                <tr>
+                                    <td colspan="2" style="text-align: center; padding: 2rem;">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Immunizations -->
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-header">
+                    <span class="card-title">💉 Immunization Records</span>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Vaccine</th>
+                                <th>Date Administered</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="immunizationsTable">
+                            <tr>
+                                <td colspan="3" style="text-align: center; padding: 2rem;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const FHIR_BASE = 'https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d';
+        const PATIENT_ID = '12742399';
+
+        let heightChart, weightChart;
+
+        async function fetchFHIR(path) {
+            const res = await fetch(`${FHIR_BASE}/${path}`, { headers: { 'Accept': 'application/fhir+json' } });
+            if (!res.ok) throw new Error(`${res.status}`);
+            return res.json();
+        }
+
+        function formatDate(d) { return d ? new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'; }
+        function formatName(n) { return n?.length ? `${n[0].given?.join(' ') || ''} ${n[0].family || ''}`.trim() : '-'; }
+        function calculateAge(dob) {
+            if (!dob) return '-';
+            const today = new Date(), birth = new Date(dob);
+            let years = today.getFullYear() - birth.getFullYear();
+            let months = today.getMonth() - birth.getMonth();
+            if (months < 0) { years--; months += 12; }
+            return `${years}y ${months}m`;
+        }
+
+        async function loadPatient() {
+            const pt = await fetchFHIR(`Patient/${PATIENT_ID}`);
+            document.getElementById('patientName').textContent = formatName(pt.name);
+            document.getElementById('patientGender').textContent = pt.gender || '-';
+            document.getElementById('patientDob').textContent = formatDate(pt.birthDate);
+            document.getElementById('patientAge').textContent = calculateAge(pt.birthDate);
+            document.getElementById('patientId').textContent = pt.id;
+            document.getElementById('avatar').textContent = pt.gender === 'female' ? '👩' : '👨';
+        }
+
+        async function loadObservations() {
+            const bundle = await fetchFHIR(`Observation?patient=${PATIENT_ID}&_count=100`);
+            const entries = bundle.entry || [];
+
+            const obsMap = new Map();
+            const heightHistory = [], weightHistory = [];
+
+            entries.forEach(e => {
+                const obs = e.resource;
+                const code = obs.code?.coding?.[0]?.code;
+                const display = obs.code?.coding?.[0]?.display || obs.code?.text || 'Unknown';
+                const displayLower = display.toLowerCase();
+                const date = obs.effectiveDateTime;
+
+                if (!obsMap.has(code) || new Date(date) > new Date(obsMap.get(code).date)) {
+                    let value = '-', numValue = null;
+                    if (obs.valueQuantity) {
+                        value = `${obs.valueQuantity.value} ${obs.valueQuantity.unit || ''}`;
+                        numValue = obs.valueQuantity.value;
+                    } else if (obs.component) {
+                        value = obs.component.map(c => c.valueQuantity?.value).filter(Boolean).join('/');
+                    }
+                    obsMap.set(code, { display, value, date, numValue, unit: obs.valueQuantity?.unit, code });
+                }
+
+                // Flexible matching for charts - match by display name or code
+                const isHeight = displayLower.includes('height') || displayLower.includes('length') || ['8302-2', '8306-3'].includes(code);
+                const isWeight = displayLower.includes('weight measured') || code === '29463-7' || code === '3141-9';
+
+                if (isHeight && obs.valueQuantity) {
+                    heightHistory.push({ date: new Date(date), value: obs.valueQuantity.value });
+                }
+                if (isWeight && obs.valueQuantity) {
+                    weightHistory.push({ date: new Date(date), value: obs.valueQuantity.value });
+                }
+            });
+
+            // Update metric cards - find by display name (exclude z-scores, percentiles)
+            let height = null, weight = null;
+            obsMap.forEach((obs) => {
+                const d = obs.display.toLowerCase();
+                const isZScore = d.includes('z-score') || d.includes('percentile') || d.includes('z score');
+
+                // Match height/length measurements (positive values, typically > 30cm)
+                if ((d.includes('height') || d.includes('length')) && !isZScore && obs.numValue && obs.numValue > 30) {
+                    if (!height || new Date(obs.date) > new Date(height.date)) height = obs;
+                }
+                // Match weight measurements (positive values, typically > 1kg)
+                if (d.includes('weight') && d.includes('measured') && !isZScore && obs.numValue && obs.numValue > 1) {
+                    if (!weight || new Date(obs.date) > new Date(weight.date)) weight = obs;
+                }
+            });
+
+            if (height) {
+                document.getElementById('heightValue').textContent = height.numValue?.toFixed(1) || '-';
+                document.getElementById('heightUnit').textContent = height.unit || 'cm';
+                document.getElementById('heightDate').textContent = `as of ${formatDate(height.date)}`;
+                const pct = Math.min(Math.max((height.numValue / 180) * 100, 10), 95).toFixed(0);
+                document.getElementById('heightPercentile').textContent = `${pct}th percentile`;
+                document.getElementById('heightBar').style.width = `${pct}%`;
+            }
+
+            if (weight) {
+                document.getElementById('weightValue').textContent = weight.numValue?.toFixed(1) || '-';
+                document.getElementById('weightUnit').textContent = weight.unit || 'kg';
+                document.getElementById('weightDate').textContent = `as of ${formatDate(weight.date)}`;
+                const pct = Math.min(Math.max((weight.numValue / 80) * 100, 10), 95).toFixed(0);
+                document.getElementById('weightPercentile').textContent = `${pct}th percentile`;
+                document.getElementById('weightBar').style.width = `${pct}%`;
+            }
+
+            // Calculate BMI
+            if (height?.numValue && weight?.numValue) {
+                const heightM = height.numValue / 100;
+                const bmi = weight.numValue / (heightM * heightM);
+                document.getElementById('bmiValue').textContent = bmi.toFixed(1);
+                document.getElementById('bmiDate').textContent = `as of ${formatDate(weight.date)}`;
+
+                let category = 'healthy', pct = 50;
+                if (bmi < 18.5) { category = 'underweight'; pct = 20; }
+                else if (bmi < 25) { category = 'healthy'; pct = 50; }
+                else if (bmi < 30) { category = 'overweight'; pct = 75; }
+                else { category = 'obese'; pct = 95; }
+
+                document.getElementById('bmiPercentile').textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                document.getElementById('bmiBar').style.width = `${pct}%`;
+                // Highlight the active BMI category
+                document.querySelectorAll('.bmi-cat').forEach(el => el.style.opacity = '0.5');
+                const activeCat = document.getElementById(`bmi-${category}`);
+                if (activeCat) {
+                    activeCat.style.opacity = '1';
+                    activeCat.style.background = 'rgba(0,0,0,0.05)';
+                    activeCat.style.transform = 'scale(1.1)';
+                }
+                document.getElementById('bmiStatement').innerHTML = `Patient has a BMI of <strong>${bmi.toFixed(1)}</strong> kg/m² (${category})`;
+            }
+
+            // BP
+            let bp = null;
+            obsMap.forEach((obs) => {
+                const d = obs.display.toLowerCase();
+                if (d.includes('blood pressure') && !bp) bp = obs;
+            });
+            if (bp) {
+                document.getElementById('bpValue').textContent = bp.value;
+                document.getElementById('bpDate').textContent = `as of ${formatDate(bp.date)}`;
+                document.getElementById('bpStatus').textContent = 'Recorded';
+                document.getElementById('bpBar').style.width = '60%';
+            }
+
+            // Observations table
+            let tableHtml = '';
+            obsMap.forEach((obs, code) => {
+                tableHtml += `<tr><td>${obs.display}</td><td><strong>${obs.value}</strong></td><td>${formatDate(obs.date)}</td><td><span class="status-badge status-completed">Recorded</span></td></tr>`;
+            });
+            document.getElementById('observationsTable').innerHTML = tableHtml || '<tr><td colspan="4">No observations</td></tr>';
+
+            // Charts
+            heightHistory.sort((a, b) => a.date - b.date);
+            weightHistory.sort((a, b) => a.date - b.date);
+
+            if (heightHistory.length > 0) {
+                heightChart = new Chart(document.getElementById('heightChart'), {
+                    type: 'line',
+                    data: {
+                        labels: heightHistory.map(h => formatDate(h.date)),
+                        datasets: [{
+                            label: 'Height (cm)',
+                            data: heightHistory.map(h => h.value),
+                            borderColor: '#0891b2',
+                            backgroundColor: 'rgba(8,145,178,0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            }
+
+            if (weightHistory.length > 0) {
+                weightChart = new Chart(document.getElementById('weightChart'), {
+                    type: 'line',
+                    data: {
+                        labels: weightHistory.map(w => formatDate(w.date)),
+                        datasets: [{
+                            label: 'Weight (kg)',
+                            data: weightHistory.map(w => w.value),
+                            borderColor: '#f97316',
+                            backgroundColor: 'rgba(249,115,22,0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        async function loadAllergies() {
+            const bundle = await fetchFHIR(`AllergyIntolerance?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+            document.getElementById('allergyCount').textContent = `${entries.length} Active`;
+
+            let html = '';
+            entries.forEach(e => {
+                const a = e.resource;
+                const name = a.code?.coding?.[0]?.display || a.code?.text || 'Unknown';
+                const severity = a.criticality === 'high' ? 'high' : 'low';
+                html += `<div class="allergy-badge"><span class="allergy-severity severity-${severity}"></span>${name}</div>`;
+            });
+            document.getElementById('allergyList').innerHTML = html || '<p style="color: var(--text-secondary);">No allergies recorded ✓</p>';
+        }
+
+        async function loadMedications() {
+            const bundle = await fetchFHIR(`MedicationRequest?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+
+            let html = '';
+            entries.slice(0, 10).forEach(e => {
+                const m = e.resource;
+                const name = m.medicationCodeableConcept?.text || m.medicationCodeableConcept?.coding?.[0]?.display || 'Unknown';
+                const status = m.status || '-';
+                html += `<tr><td>${name}</td><td><span class="status-badge status-active">${status}</span></td></tr>`;
+            });
+            document.getElementById('medicationsTable').innerHTML = html || '<tr><td colspan="2">No medications</td></tr>';
+        }
+
+        async function loadConditions() {
+            const bundle = await fetchFHIR(`Condition?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+
+            let html = '';
+            entries.slice(0, 10).forEach(e => {
+                const c = e.resource;
+                const name = c.code?.coding?.[0]?.display || c.code?.text || 'Unknown';
+                const status = c.clinicalStatus?.coding?.[0]?.code || '-';
+                html += `<tr><td>${name}</td><td><span class="status-badge status-active">${status}</span></td></tr>`;
+            });
+            document.getElementById('conditionsTable').innerHTML = html || '<tr><td colspan="2">No conditions</td></tr>';
+        }
+
+        async function loadImmunizations() {
+            const bundle = await fetchFHIR(`Immunization?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+
+            let html = '';
+            entries.forEach(e => {
+                const i = e.resource;
+                const name = i.vaccineCode?.coding?.[0]?.display || i.vaccineCode?.text || 'Unknown';
+                html += `<tr><td>${name}</td><td>${formatDate(i.occurrenceDateTime)}</td><td><span class="status-badge status-completed">${i.status}</span></td></tr>`;
+            });
+            document.getElementById('immunizationsTable').innerHTML = html || '<tr><td colspan="3">No immunizations</td></tr>';
+        }
+
+        async function init() {
+            try {
+                await loadPatient();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                await Promise.allSettled([loadObservations(), loadAllergies(), loadMedications(), loadConditions(), loadImmunizations()]);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').innerHTML = `<p style="color: #ef4444;">Error: ${err.message}</p>`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

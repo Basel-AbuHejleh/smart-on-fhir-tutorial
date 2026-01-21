@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced SMART on FHIR Patient Portal</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --accent-cyan: #00d4ff;
+            --accent-purple: #7c3aed;
+            --accent-green: #2ed573;
+            --accent-orange: #ff9f43;
+            --accent-red: #ff4757;
+            --text-primary: #e8e8e8;
+            --text-secondary: #888;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            font-size: 1.5rem;
+        }
+
+        .logo h1 {
+            font-size: 1.25rem;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .connection-badge {
+            background: rgba(46, 213, 115, 0.15);
+            color: var(--accent-green);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .patient-header {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .patient-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            flex-shrink: 0;
+        }
+
+        .patient-info h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .patient-meta {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            background: var(--bg-card);
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            border: none;
+            background: transparent;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h3 {
+            font-size: 1.1rem;
+            color: var(--accent-cyan);
+        }
+
+        .card-header .count {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent-cyan);
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-left: auto;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: var(--accent-cyan);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .stat-date {
+            font-size: 0.75rem;
+            color: #555;
+            margin-top: 0.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            text-transform: capitalize;
+        }
+
+        .status-active {
+            background: rgba(46, 213, 115, 0.15);
+            color: var(--accent-green);
+        }
+
+        .status-completed {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        .status-cancelled {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--accent-red);
+        }
+
+        .status-pending {
+            background: rgba(255, 159, 67, 0.15);
+            color: var(--accent-orange);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 212, 255, 0.2);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-box {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            color: var(--accent-red);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 212, 255, 0.15);
+            flex-shrink: 0;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .allergy-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255, 71, 87, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-red);
+        }
+
+        .allergy-item+.allergy-item {
+            margin-top: 0.75rem;
+        }
+
+        .med-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .med-item+.med-item {
+            margin-top: 0.75rem;
+        }
+
+        .med-name {
+            font-weight: 500;
+        }
+
+        .med-dosage {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🏥</span>
+                <h1>SMART on FHIR Patient Portal</h1>
+            </div>
+            <div class="connection-badge">
+                <span>●</span> Connected to Cerner FHIR R4
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading patient data...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <!-- Patient Header -->
+            <div class="patient-header">
+                <div class="patient-avatar" id="patientAvatar">👤</div>
+                <div class="patient-info">
+                    <h2 id="patientName">Loading...</h2>
+                    <div class="patient-meta">
+                        <div class="meta-item"><span>📋</span> <span id="patientId">-</span></div>
+                        <div class="meta-item"><span>👤</span> <span id="patientGender">-</span></div>
+                        <div class="meta-item"><span>🎂</span> <span id="patientDob">-</span></div>
+                        <div class="meta-item"><span>📍</span> <span id="patientAddress">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="overview">📊 Overview</button>
+                <button class="tab" data-tab="vitals">❤️ Vitals</button>
+                <button class="tab" data-tab="conditions">🩺 Conditions</button>
+                <button class="tab" data-tab="medications">💊 Medications</button>
+                <button class="tab" data-tab="allergies">⚠️ Allergies</button>
+                <button class="tab" data-tab="immunizations">💉 Immunizations</button>
+                <button class="tab" data-tab="encounters">🏨 Encounters</button>
+                <button class="tab" data-tab="procedures">🔬 Procedures</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <span>❤️</span>
+                            <h3>Latest Vitals</h3>
+                        </div>
+                        <div id="latestVitals" class="grid grid-3">
+                            <p class="empty-state">Loading...</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span>⚠️</span>
+                            <h3>Active Allergies</h3>
+                        </div>
+                        <div id="activeAllergies">
+                            <p class="empty-state">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span>🩺</span>
+                        <h3>Active Conditions</h3>
+                    </div>
+                    <div id="activeConditions">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span>💊</span>
+                        <h3>Current Medications</h3>
+                    </div>
+                    <div id="currentMedications">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vitals Tab -->
+            <div id="vitals" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span>📈</span>
+                        <h3>Vital Signs History</h3>
+                        <span class="count" id="vitalsCount">0</span>
+                    </div>
+                    <div id="vitalsHistory" class="grid grid-3">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conditions Tab -->
+            <div id="conditions" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🩺</span>
+                        <h3>All Conditions</h3>
+                        <span class="count" id="conditionsCount">0</span>
+                    </div>
+                    <div id="allConditions">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medications Tab -->
+            <div id="medications" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span>💊</span>
+                        <h3>Medication Requests</h3>
+                        <span class="count" id="medsCount">0</span>
+                    </div>
+                    <div id="allMedications">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Allergies Tab -->
+            <div id="allergies" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚠️</span>
+                        <h3>Allergy & Intolerance List</h3>
+                        <span class="count" id="allergiesCount">0</span>
+                    </div>
+                    <div id="allAllergies">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Immunizations Tab -->
+            <div id="immunizations" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span>💉</span>
+                        <h3>Immunization Records</h3>
+                        <span class="count" id="immunizationsCount">0</span>
+                    </div>
+                    <div id="allImmunizations">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Encounters Tab -->
+            <div id="encounters" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🏨</span>
+                        <h3>Encounter History</h3>
+                        <span class="count" id="encountersCount">0</span>
+                    </div>
+                    <div id="allEncounters">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Procedures Tab -->
+            <div id="procedures" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔬</span>
+                        <h3>Procedures</h3>
+                        <span class="count" id="proceduresCount">0</span>
+                    </div>
+                    <div id="allProcedures">
+                        <p class="empty-state">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="error" style="display: none;" class="error-box"></div>
+    </main>
+
+    <script>
+        const FHIR_BASE = 'https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d';
+        const PATIENT_ID = '12742399';
+
+        // Tab Navigation
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        async function fetchFHIR(path) {
+            const res = await fetch(`${FHIR_BASE}/${path}`, {
+                headers: { 'Accept': 'application/fhir+json' }
+            });
+            if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+            return res.json();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'short', day: 'numeric'
+            });
+        }
+
+        function formatName(name) {
+            if (!name?.length) return '-';
+            const n = name[0];
+            return `${n.given?.join(' ') || ''} ${n.family || ''}`.trim() || '-';
+        }
+
+        function formatAddress(addr) {
+            if (!addr?.length) return '-';
+            const a = addr[0];
+            return [a.city, a.state].filter(Boolean).join(', ') || '-';
+        }
+
+        function getStatusClass(status) {
+            if (!status) return '';
+            status = status.toLowerCase();
+            if (['active', 'in-progress'].includes(status)) return 'status-active';
+            if (['completed', 'finished'].includes(status)) return 'status-completed';
+            if (['cancelled', 'entered-in-error'].includes(status)) return 'status-cancelled';
+            return 'status-pending';
+        }
+
+        async function loadPatient() {
+            const pt = await fetchFHIR(`Patient/${PATIENT_ID}`);
+            document.getElementById('patientName').textContent = formatName(pt.name);
+            document.getElementById('patientId').textContent = `ID: ${pt.id}`;
+            document.getElementById('patientGender').textContent = pt.gender || '-';
+            document.getElementById('patientDob').textContent = formatDate(pt.birthDate);
+            document.getElementById('patientAddress').textContent = formatAddress(pt.address);
+            document.getElementById('patientAvatar').textContent = pt.gender === 'female' ? '👩' : '👨';
+        }
+
+        async function loadObservations() {
+            const bundle = await fetchFHIR(`Observation?patient=${PATIENT_ID}&_count=50`);
+            const entries = bundle.entry || [];
+            document.getElementById('vitalsCount').textContent = entries.length;
+
+            const obsMap = new Map();
+            entries.forEach(e => {
+                const obs = e.resource;
+                const code = obs.code?.coding?.[0]?.code || 'unknown';
+                if (!obsMap.has(code) || new Date(obs.effectiveDateTime) > new Date(obsMap.get(code).effectiveDateTime)) {
+                    obsMap.set(code, obs);
+                }
+            });
+
+            let html = '';
+            obsMap.forEach(obs => {
+                let value = '-';
+                if (obs.valueQuantity) {
+                    value = `${obs.valueQuantity.value} ${obs.valueQuantity.unit || ''}`;
+                } else if (obs.valueString) {
+                    value = obs.valueString;
+                } else if (obs.component) {
+                    value = obs.component.map(c =>
+                        c.valueQuantity ? `${c.valueQuantity.value}` : ''
+                    ).filter(Boolean).join('/');
+                }
+                const label = obs.code?.coding?.[0]?.display || obs.code?.text || 'Unknown';
+                html += `
+          <div class="stat-card">
+            <div class="stat-value">${value}</div>
+            <div class="stat-label">${label}</div>
+            <div class="stat-date">${formatDate(obs.effectiveDateTime)}</div>
+          </div>`;
+            });
+
+            document.getElementById('latestVitals').innerHTML = html || '<p class="empty-state">No vitals found</p>';
+            document.getElementById('vitalsHistory').innerHTML = html || '<p class="empty-state">No vitals found</p>';
+        }
+
+        async function loadConditions() {
+            const bundle = await fetchFHIR(`Condition?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+            document.getElementById('conditionsCount').textContent = entries.length;
+
+            let html = '<table><tr><th>Condition</th><th>Status</th><th>Onset</th></tr>';
+            entries.forEach(e => {
+                const cond = e.resource;
+                const name = cond.code?.coding?.[0]?.display || cond.code?.text || 'Unknown';
+                const status = cond.clinicalStatus?.coding?.[0]?.code || '-';
+                html += `
+          <tr>
+            <td>${name}</td>
+            <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
+            <td>${formatDate(cond.onsetDateTime)}</td>
+          </tr>`;
+            });
+            html += '</table>';
+
+            document.getElementById('activeConditions').innerHTML = entries.length ? html : '<p class="empty-state">No conditions found</p>';
+            document.getElementById('allConditions').innerHTML = entries.length ? html : '<p class="empty-state">No conditions found</p>';
+        }
+
+        async function loadMedicationRequests() {
+            const bundle = await fetchFHIR(`MedicationRequest?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+            document.getElementById('medsCount').textContent = entries.length;
+
+            let html = '';
+            entries.forEach(e => {
+                const med = e.resource;
+                const name = med.medicationCodeableConcept?.text ||
+                    med.medicationCodeableConcept?.coding?.[0]?.display || 'Unknown Medication';
+                const status = med.status || '-';
+                const dosage = med.dosageInstruction?.[0]?.text || '';
+                html += `
+          <div class="med-item">
+            <div>
+              <div class="med-name">${name}</div>
+              ${dosage ? `<div class="med-dosage">${dosage}</div>` : ''}
+            </div>
+            <span class="status-badge ${getStatusClass(status)}">${status}</span>
+          </div>`;
+            });
+
+            document.getElementById('currentMedications').innerHTML = html || '<p class="empty-state">No medications found</p>';
+            document.getElementById('allMedications').innerHTML = html || '<p class="empty-state">No medications found</p>';
+        }
+
+        async function loadAllergies() {
+            const bundle = await fetchFHIR(`AllergyIntolerance?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+            document.getElementById('allergiesCount').textContent = entries.length;
+
+            let html = '';
+            entries.forEach(e => {
+                const allergy = e.resource;
+                const name = allergy.code?.coding?.[0]?.display || allergy.code?.text || 'Unknown';
+                const severity = allergy.criticality || '-';
+                html += `
+          <div class="allergy-item">
+            <span>⚠️</span>
+            <div>
+              <strong>${name}</strong>
+              <div style="font-size: 0.85rem; color: var(--text-secondary)">Criticality: ${severity}</div>
+            </div>
+          </div>`;
+            });
+
+            document.getElementById('activeAllergies').innerHTML = html || '<p class="empty-state">No allergies recorded ✓</p>';
+            document.getElementById('allAllergies').innerHTML = html || '<p class="empty-state">No allergies recorded ✓</p>';
+        }
+
+        async function loadImmunizations() {
+            const bundle = await fetchFHIR(`Immunization?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+            document.getElementById('immunizationsCount').textContent = entries.length;
+
+            let html = '<table><tr><th>Vaccine</th><th>Date</th><th>Status</th></tr>';
+            entries.forEach(e => {
+                const imm = e.resource;
+                const name = imm.vaccineCode?.coding?.[0]?.display || imm.vaccineCode?.text || 'Unknown';
+                const status = imm.status || '-';
+                html += `
+          <tr>
+            <td>${name}</td>
+            <td>${formatDate(imm.occurrenceDateTime)}</td>
+            <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
+          </tr>`;
+            });
+            html += '</table>';
+
+            document.getElementById('allImmunizations').innerHTML = entries.length ? html : '<p class="empty-state">No immunizations found</p>';
+        }
+
+        async function loadEncounters() {
+            const bundle = await fetchFHIR(`Encounter?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+            document.getElementById('encountersCount').textContent = entries.length;
+
+            let html = '';
+            entries.forEach(e => {
+                const enc = e.resource;
+                const type = enc.type?.[0]?.text || enc.type?.[0]?.coding?.[0]?.display || 'Encounter';
+                const status = enc.status || '-';
+                const period = enc.period?.start ? formatDate(enc.period.start) : '-';
+                html += `
+          <div class="timeline-item">
+            <div class="timeline-icon">🏨</div>
+            <div class="timeline-content">
+              <div class="timeline-title">${type}</div>
+              <div class="timeline-meta">${period} • <span class="status-badge ${getStatusClass(status)}">${status}</span></div>
+            </div>
+          </div>`;
+            });
+
+            document.getElementById('allEncounters').innerHTML = html || '<p class="empty-state">No encounters found</p>';
+        }
+
+        async function loadProcedures() {
+            const bundle = await fetchFHIR(`Procedure?patient=${PATIENT_ID}&_count=20`);
+            const entries = bundle.entry || [];
+            document.getElementById('proceduresCount').textContent = entries.length;
+
+            let html = '<table><tr><th>Procedure</th><th>Date</th><th>Status</th></tr>';
+            entries.forEach(e => {
+                const proc = e.resource;
+                const name = proc.code?.coding?.[0]?.display || proc.code?.text || 'Unknown';
+                const status = proc.status || '-';
+                html += `
+          <tr>
+            <td>${name}</td>
+            <td>${formatDate(proc.performedDateTime || proc.performedPeriod?.start)}</td>
+            <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
+          </tr>`;
+            });
+            html += '</table>';
+
+            document.getElementById('allProcedures').innerHTML = entries.length ? html : '<p class="empty-state">No procedures found</p>';
+        }
+
+        async function init() {
+            try {
+                await loadPatient();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                // Load all resources in parallel
+                await Promise.allSettled([
+                    loadObservations(),
+                    loadConditions(),
+                    loadMedicationRequests(),
+                    loadAllergies(),
+                    loadImmunizations(),
+                    loadEncounters(),
+                    loadProcedures()
+                ]);
+            } catch (err) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerHTML = `<strong>Error:</strong> ${err.message}`;
+                console.error(err);
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
