@@ -524,7 +524,65 @@
             title: { display: true, text: 'Cholesterol Breakdown' }
           }
         }
-      });
+      })
+        ;
+    }
+
+    // Render Allergies
+    if (p.allergies && p.allergies.length > 0) {
+      $('#allergies-container').html(p.allergies.map(function (allergy) {
+        return '<div class="list-item">' +
+          '<span class="item-name">' + allergy.substance + '</span>' +
+          '<span class="badge ' + allergy.criticality + '">' + allergy.criticality + '</span>' +
+          '</div>';
+      }).join(''));
+    } else {
+      $('#allergies-container').html('<div style="text-align: center; opacity: 0.5; padding: 2rem;">No known allergies</div>');
+    }
+
+    // Render Medications
+    if (p.medications && p.medications.length > 0) {
+      $('#medications-container').html(p.medications.map(function (med) {
+        return '<div class="list-item">' +
+          '<div style="flex: 1;">' +
+          '<div class="item-name">' + med.name + '</div>' +
+          '<div class="item-detail">' + med.dosage + '</div>' +
+          '</div>' +
+          '<span class="badge ' + med.status + '">' + med.status + '</span>' +
+          '</div>';
+      }).join(''));
+    } else {
+      $('#medications-container').html('<div style="text-align: center; opacity: 0.5; padding: 2rem;">No active medications</div>');
+    }
+
+    // Render Conditions
+    if (p.conditions && p.conditions.length > 0) {
+      $('#conditions-container').html(p.conditions.map(function (cond) {
+        return '<div class="list-item">' +
+          '<div style="flex: 1;">' +
+          '<div class="item-name">' + cond.name + '</div>' +
+          (cond.onsetDate ? '<div class="item-detail">Onset: ' + cond.onsetDate + '</div>' : '') +
+          '</div>' +
+          '<span class="badge ' + cond.status + '">' + cond.status + '</span>' +
+          '</div>';
+      }).join(''));
+    } else {
+      $('#conditions-container').html('<div style="text-align: center; opacity: 0.5; padding: 2rem;">No recorded conditions</div>');
+    }
+
+    // Render Immunizations
+    if (p.immunizations && p.immunizations.length > 0) {
+      $('#immunizations-container').html(p.immunizations.map(function (imm) {
+        return '<div class="list-item">' +
+          '<div style="flex: 1;">' +
+          '<div class="item-name">' + imm.vaccine + '</div>' +
+          '<div class="item-detail">' + imm.date + '</div>' +
+          '</div>' +
+          '<span class="badge ' + imm.status + '">' + imm.status + '</span>' +
+          '</div>';
+      }).join(''));
+    } else {
+      $('#immunizations-container').html('<div style="text-align: center; opacity: 0.5; padding: 2rem;">No immunization records</div>');
     }
   };
 
