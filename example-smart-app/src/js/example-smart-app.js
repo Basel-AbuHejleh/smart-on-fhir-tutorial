@@ -94,7 +94,8 @@
 
         // Query AllergyIntolerance resources (optional - may return 403 if not authorized)
         var allergies = smart.patient.api.fetchAll({
-          type: 'AllergyIntolerance'
+          type: 'AllergyIntolerance',
+          query: { patient: smart.patient.id }
         }).then(function (data) {
           return data;
         }, function () {
@@ -103,7 +104,8 @@
 
         // Query MedicationRequest resources (optional - may return 403 if not authorized)
         var medications = smart.patient.api.fetchAll({
-          type: 'MedicationRequest'
+          type: 'MedicationRequest',
+          query: { patient: smart.patient.id }
         }).then(function (data) {
           return data;
         }, function () {
@@ -112,7 +114,8 @@
 
         // Query Condition resources (optional - may return 403 if not authorized)
         var conditions = smart.patient.api.fetchAll({
-          type: 'Condition'
+          type: 'Condition',
+          query: { patient: smart.patient.id }
         }).then(function (data) {
           return data;
         }, function () {
@@ -121,7 +124,8 @@
 
         // Query Immunization resources (optional - may return 403 if not authorized)
         var immunizations = smart.patient.api.fetchAll({
-          type: 'Immunization'
+          type: 'Immunization',
+          query: { patient: smart.patient.id }
         }).then(function (data) {
           return data;
         }, function () {
