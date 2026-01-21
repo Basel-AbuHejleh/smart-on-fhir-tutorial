@@ -92,12 +92,58 @@
           }
         });
 
-        // Temporarily disabled optional resources to avoid cache/permission issues
-        // Re-enable after re-registering app with proper OAuth scopes
-        var allergies = $.Deferred().resolve([]).promise();
-        var medications = $.Deferred().resolve([]).promise();
-        var conditions = $.Deferred().resolve([]).promise();
-        var immunizations = $.Deferred().resolve([]).promise();
+
+        // Query AllergyIntolerance resources (active only)
+        var allergies = smart.patient.api.fetchAll({
+          type: 'AllergyIntolerance',
+          query: {
+            patient: smart.patient.id,
+            'clinical-status': 'active'  // Only active allergies
+          }
+        }).then(function (data) {
+          return data;
+        }, function () {
+          return $.Deferred().resolve([]).promise();
+        });
+
+        // Query MedicationRequest resources (active only)
+        var medications = smart.patient.api.fetchAll({
+          type: 'MedicationRequest',
+          query: {
+            patient: smart.patient.id,
+            status: 'active'  // Only active medications
+          }
+        }).then(function (data) {
+          return data;
+        }, function () {
+          return $.Deferred().resolve([]).promise();
+        });
+
+        // Query Condition resources (active only)
+        var conditions = smart.patient.api.fetchAll({
+          type: 'Condition',
+          query: {
+            patient: smart.patient.id,
+            'clinical-status': 'active'  // Only active conditions
+          }
+        }).then(function (data) {
+          return data;
+        }, function () {
+          return $.Deferred().resolve([]).promise();
+        });
+
+        // Query Immunization resources (completed only)
+        var immunizations = smart.patient.api.fetchAll({
+          type: 'Immunization',
+          query: {
+            patient: smart.patient.id,
+            status: 'completed'  // Only completed immunizations
+          }
+        }).then(function (data) {
+          return data;
+        }, function () {
+          return $.Deferred().resolve([]).promise();
+        });
 
         // Register error handler ONLY for required resources (Patient and Observations)
         $.when(pt, obv).fail(onError);
