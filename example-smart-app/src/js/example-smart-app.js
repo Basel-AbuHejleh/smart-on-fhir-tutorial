@@ -120,8 +120,8 @@
            * FHIR R4 HumanName structure (patient.name is an array):
            * {
            *   "use": "official",           // Name context: official, usual, nickname, etc.
-           *   "family": "Smith",           // Last name - can be string OR array!
-           *   "given": ["John", "Q"],     // First/middle names - always array
+           *   "family": "AbuHejleh",        // Last name - can be string OR array!
+           *   "given": ["Basheer", "M"],   // First/middle names - always array
            *   "prefix": ["Dr."],           // Title/prefix
            *   "suffix": ["Jr.", "MD"]     // Suffix
            * }
@@ -130,14 +130,14 @@
            * We use name[0] which typically represents the official or primary name.
            */
           if (typeof patient.name[0] !== 'undefined') {
-            // Join all given names with spaces: ["John", "Michael"] → "John Michael"
+            // Join all given names with spaces: ["Basheer", "Ahmad"] → "Basheer Ahmad"
             fname = patient.name[0].given.join(' ');
 
             /**
              * CRITICAL: Handle family name as EITHER string OR array
              * 
              * Why both formats exist:
-             * - US/UK systems: typically use string ("Smith", "Johnson")
+             * - US/UK systems: typically use string ("AbuHejleh", "Johnson")
              * - European systems: often use array for compound surnames
              *   Examples: ["van", "der", "Berg"], ["de", "la", "Cruz"]
              * 
@@ -146,7 +146,7 @@
              */
             lname = Array.isArray(patient.name[0].family)
               ? patient.name[0].family.join(' ')  // Array: ["van", "Berg"] → "van Berg"
-              : patient.name[0].family;           // String: "Smith" → "Smith"
+              : patient.name[0].family;           // String: "AbuHejleh" → "AbuHejleh"
           }
 
           /**
