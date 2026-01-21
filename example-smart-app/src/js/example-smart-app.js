@@ -85,7 +85,8 @@
                 'http://loinc.org|8480-6',   // Systolic BP - upper blood pressure number
                 'http://loinc.org|2085-9',   // HDL Cholesterol - "good" cholesterol level
                 'http://loinc.org|2089-1',   // LDL Cholesterol - "bad" cholesterol level
-                'http://loinc.org|55284-4'   // BP Panel - contains both systolic/diastolic as components
+                'http://loinc.org|55284-4',  // BP Panel - contains both systolic/diastolic as components
+                'http://loinc.org|85354-9'   // BP Panel - alternate code (all children optional)
               ]
             }
           }
@@ -169,7 +170,13 @@
           var systolicbp, diastolicbp;
 
           // Approach 1: Try to get BP from panel observations
+          // Check for standard panel (55284-4) OR alternate panel (85354-9)
           var bpPanelObservations = byCodes('55284-4');
+
+          if (!bpPanelObservations || bpPanelObservations.length === 0) {
+            bpPanelObservations = byCodes('85354-9');
+          }
+
           if (bpPanelObservations && bpPanelObservations.length > 0) {
             // Panel observations found - extract components
             systolicbp = getBloodPressureValue(bpPanelObservations, '8480-6');
