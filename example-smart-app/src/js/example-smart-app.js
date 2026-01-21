@@ -85,7 +85,8 @@
                 'http://loinc.org|8480-6',   // Systolic BP - upper blood pressure number
                 'http://loinc.org|2085-9',   // HDL Cholesterol - "good" cholesterol level
                 'http://loinc.org|2089-1',   // LDL Cholesterol - "bad" cholesterol level
-                'http://loinc.org|85354-9'   // BP Panel - alternate code (all children optional)
+                'http://loinc.org|85354-9',  // BP Panel - alternate code (all children optional)
+                'http://loinc.org|8310-5'    // Body Temperature
               ]
             }
           }
@@ -206,6 +207,7 @@
 
           var hdl = byCodes('2085-9');           // HDL "good" cholesterol
           var ldl = byCodes('2089-1');           // LDL "bad" cholesterol
+          var temperature = byCodes('8310-5');   // Body temperature
 
           // Create a patient data object using our default structure
           var p = defaultPatient();
@@ -216,6 +218,7 @@
           p.fname = fname;
           p.lname = lname;
           p.height = getQuantityValueAndUnit(height[0]);  // e.g., "180 cm"
+          p.temperature = getQuantityValueAndUnit(temperature[0]); // e.g., "37 °C"
 
           // Only set blood pressure if values exist (they may be undefined)
           if (typeof systolicbp != 'undefined') {
@@ -469,6 +472,7 @@
     $('#gender').html(p.gender);         // Gender (male/female/other/unknown)
     $('#birthdate').html(p.birthdate);   // Birth date (YYYY-MM-DD)
     $('#height').html(p.height);         // Height with unit (e.g., "180 cm")
+    $('#temperature').html(p.temperature); // Body temperature
     $('#systolicbp').html(p.systolicbp); // Systolic BP
     $('#diastolicbp').html(p.diastolicbp); // Diastolic BP
     $('#ldl').html(p.ldl);               // LDL
