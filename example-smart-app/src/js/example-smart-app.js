@@ -92,45 +92,12 @@
           }
         });
 
-        // Query AllergyIntolerance resources (optional - may return 403 if not authorized)
-        var allergies = smart.patient.api.fetchAll({
-          type: 'AllergyIntolerance',
-          query: { patient: smart.patient.id }
-        }).then(function (data) {
-          return data;
-        }, function () {
-          return $.Deferred().resolve([]).promise();
-        });
-
-        // Query MedicationRequest resources (optional - may return 403 if not authorized)
-        var medications = smart.patient.api.fetchAll({
-          type: 'MedicationRequest',
-          query: { patient: smart.patient.id }
-        }).then(function (data) {
-          return data;
-        }, function () {
-          return $.Deferred().resolve([]).promise();
-        });
-
-        // Query Condition resources (optional - may return 403 if not authorized)
-        var conditions = smart.patient.api.fetchAll({
-          type: 'Condition',
-          query: { patient: smart.patient.id }
-        }).then(function (data) {
-          return data;
-        }, function () {
-          return $.Deferred().resolve([]).promise();
-        });
-
-        // Query Immunization resources (optional - may return 403 if not authorized)
-        var immunizations = smart.patient.api.fetchAll({
-          type: 'Immunization',
-          query: { patient: smart.patient.id }
-        }).then(function (data) {
-          return data;
-        }, function () {
-          return $.Deferred().resolve([]).promise();
-        });
+        // Temporarily disabled optional resources to avoid cache/permission issues
+        // Re-enable after re-registering app with proper OAuth scopes
+        var allergies = $.Deferred().resolve([]).promise();
+        var medications = $.Deferred().resolve([]).promise();
+        var conditions = $.Deferred().resolve([]).promise();
+        var immunizations = $.Deferred().resolve([]).promise();
 
         // Register error handler ONLY for required resources (Patient and Observations)
         $.when(pt, obv).fail(onError);
