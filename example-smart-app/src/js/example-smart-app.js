@@ -95,22 +95,22 @@
         // Query AllergyIntolerance resources (optional - may return 403 if not authorized)
         var allergies = smart.patient.api.fetchAll({
           type: 'AllergyIntolerance'
-        }).catch(function () { return []; }); // Return empty array on error
+        }).fail(function () { return []; }); // Return empty array on error
 
         // Query MedicationRequest resources (optional - may return 403 if not authorized)
         var medications = smart.patient.api.fetchAll({
           type: 'MedicationRequest'
-        }).catch(function () { return []; }); // Return empty array on error
+        }).fail(function () { return []; }); // Return empty array on error
 
         // Query Condition resources (optional - may return 403 if not authorized)
         var conditions = smart.patient.api.fetchAll({
           type: 'Condition'
-        }).catch(function () { return []; }); // Return empty array on error
+        }).fail(function () { return []; }); // Return empty array on error
 
         // Query Immunization resources (optional - may return 403 if not authorized)
         var immunizations = smart.patient.api.fetchAll({
           type: 'Immunization'
-        }).catch(function () { return []; }); // Return empty array on error
+        }).fail(function () { return []; }); // Return empty array on error
 
         // Register error handler ONLY for required resources (Patient and Observations)
         $.when(pt, obv).fail(onError);
