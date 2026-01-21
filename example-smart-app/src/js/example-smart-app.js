@@ -92,28 +92,28 @@
           }
         });
 
-        // Query AllergyIntolerance resources
+        // Query AllergyIntolerance resources (optional - may return 403 if not authorized)
         var allergies = smart.patient.api.fetchAll({
           type: 'AllergyIntolerance'
-        });
+        }).catch(function () { return []; }); // Return empty array on error
 
-        // Query MedicationRequest resources
+        // Query MedicationRequest resources (optional - may return 403 if not authorized)
         var medications = smart.patient.api.fetchAll({
           type: 'MedicationRequest'
-        });
+        }).catch(function () { return []; }); // Return empty array on error
 
-        // Query Condition resources
+        // Query Condition resources (optional - may return 403 if not authorized)
         var conditions = smart.patient.api.fetchAll({
           type: 'Condition'
-        });
+        }).catch(function () { return []; }); // Return empty array on error
 
-        // Query Immunization resources
+        // Query Immunization resources (optional - may return 403 if not authorized)
         var immunizations = smart.patient.api.fetchAll({
           type: 'Immunization'
-        });
+        }).catch(function () { return []; }); // Return empty array on error
 
-        // Register error handler for any failures in API calls
-        $.when(pt, obv, allergies, medications, conditions, immunizations).fail(onError);
+        // Register error handler ONLY for required resources (Patient and Observations)
+        $.when(pt, obv).fail(onError);
 
         /**
          * Process patient and observation data when BOTH API calls complete successfully
